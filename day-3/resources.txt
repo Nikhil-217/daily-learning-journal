@@ -1,0 +1,5 @@
+## Check this to learn how tokenizer work for given text(OpenAPI Tokenizer tool)
+https://platform.openai.com/tokenizer?utm_source=chatgpt.com
+
+## Hugging Face NLP Course (Free)
+https://huggingface.co/learn/nlp-course/?utm_source=chatgpt.com

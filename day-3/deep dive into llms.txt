@@ -1,0 +1,663 @@
+# Day 03 - Deep Dive into Large Language Models (LLMs)
+
+## Introduction
+
+Today I went beyond the basic introduction to Generative AI and explored how Large Language Models (LLMs) actually work internally.
+
+Before this learning session, I knew that tools like ChatGPT could generate text. Today I learned what happens behind the scenes—from text tokenization to embeddings, transformers, attention mechanisms, training, and next-token prediction.
+
+The biggest realization was that LLMs do not "understand" language like humans. Instead, they learn statistical patterns from massive amounts of text and become extremely good at predicting the next token.
+
+---
+
+# What is an LLM?
+
+A Large Language Model (LLM) is a neural network trained on huge amounts of text data to predict the next token in a sequence.
+
+Examples:
+
+* ChatGPT
+* Gemini
+* Claude
+* Llama
+
+Core Idea:
+
+> Given previous text, predict what comes next.
+
+Example:
+
+Input:
+
+```text
+The sun rises in the _____
+```
+
+Prediction:
+
+```text
+east
+```
+
+---
+
+# Overall LLM Pipeline
+
+```text
+Raw Text
+    ↓
+Tokenizer
+    ↓
+Token IDs
+    ↓
+Embeddings
+    ↓
+Positional Encoding
+    ↓
+Transformer Layers
+    ↓
+Attention
+    ↓
+Probability Distribution
+    ↓
+Next Token Prediction
+    ↓
+Generated Response
+```
+
+---
+
+# Step 1: Tokenization
+
+Computers cannot directly understand text.
+
+Before processing, text must be broken into smaller pieces called tokens.
+
+Example:
+
+```text
+I love programming
+```
+
+becomes:
+
+```text
+[I] [love] [programming]
+```
+
+Each token receives a unique ID.
+
+Example:
+
+```text
+I           → 40
+love        → 892
+programming → 15783
+```
+
+Result:
+
+```text
+[40, 892, 15783]
+```
+
+These numbers are only identifiers.
+
+They do not contain meaning.
+
+---
+
+# Why Not Convert Text Directly Into Embeddings?
+
+This was one of the most important questions I explored today.
+
+At first, I wondered:
+
+```text
+Text
+ ↓
+Embedding
+```
+
+Why not directly convert text into embeddings?
+
+The reason is that there are infinitely many possible sentences.
+
+Examples:
+
+```text
+I love programming
+I love Python programming
+I love Java programming
+I love competitive programming
+```
+
+Creating a separate embedding for every possible sentence would be impossible.
+
+Instead:
+
+```text
+Sentence
+ ↓
+Tokens
+ ↓
+Embeddings
+```
+
+allows the model to reuse knowledge.
+
+---
+
+# Subword Tokenization
+
+Modern LLMs often split words into smaller pieces.
+
+Example:
+
+```text
+unbelievable
+```
+
+might become:
+
+```text
+un
+believ
+able
+```
+
+Advantages:
+
+* Smaller vocabulary
+* Better memory efficiency
+* Can understand unseen words
+
+Example:
+
+```text
+electromagnetism
+```
+
+can be split into:
+
+```text
+electro
+magnet
+ism
+```
+
+Even if the model has never seen the full word before.
+
+---
+
+# Step 2: Embeddings
+
+Token IDs are still just numbers.
+
+The model converts them into vectors called embeddings.
+
+Example:
+
+```text
+40
+```
+
+might become:
+
+```text
+[0.2, 0.7, -0.1, ...]
+```
+
+Embeddings represent semantic meaning.
+
+Example:
+
+Words with similar meanings often appear close together:
+
+```text
+Dog
+Puppy
+Canine
+```
+
+Similarly:
+
+```text
+Car
+Truck
+Vehicle
+```
+
+form another cluster.
+
+---
+
+# What is an Embedding?
+
+An embedding is a high-dimensional numerical representation of a token.
+
+Example:
+
+```text
+Dog
+```
+
+might become:
+
+```text
+[0.73, -1.24, 2.11, 0.44, ...]
+```
+
+Modern LLMs may use vectors with:
+
+* 768 dimensions
+* 1024 dimensions
+* 4096 dimensions
+* 8192 dimensions
+
+The model learns these representations during training.
+
+---
+
+# Embedding Matrix
+
+The model stores embeddings in a giant lookup table.
+
+Example:
+
+| Token ID | Embedding           |
+| -------- | ------------------- |
+| 40       | [0.1, 0.7, -0.3...] |
+| 892      | [0.5, -1.2, 2.1...] |
+| 15783    | [-0.4, 0.9, 1.7...] |
+
+When a token appears, its embedding is fetched from this matrix.
+
+---
+
+# Step 3: Positional Encoding
+
+Transformers process all tokens simultaneously.
+
+Because of this, they do not automatically know word order.
+
+Example:
+
+```text
+Dog bites man
+```
+
+and
+
+```text
+Man bites dog
+```
+
+contain the same words but have completely different meanings.
+
+Positional Encoding solves this problem.
+
+Conceptually:
+
+```text
+Dog    + Position(1)
+bites  + Position(2)
+man    + Position(3)
+```
+
+Now the model knows where each token occurs.
+
+---
+
+# Step 4: Transformer Architecture
+
+The Transformer is the core engine of modern LLMs.
+
+Its primary job is:
+
+> Understanding context and relationships between words.
+
+Embeddings tell us what a word means individually.
+
+Transformers determine what the word means within a sentence.
+
+Example:
+
+```text
+bank
+```
+
+can mean:
+
+```text
+River bank
+```
+
+or
+
+```text
+Financial bank
+```
+
+Transformers use surrounding context to determine the correct meaning.
+
+---
+
+# Step 5: Self-Attention
+
+Self-Attention is the most important innovation in Transformers.
+
+Example:
+
+```text
+Nikhil studies AI because he loves technology.
+```
+
+When the model processes:
+
+```text
+he
+```
+
+it needs to determine:
+
+```text
+Who is "he"?
+```
+
+The model learns:
+
+```text
+he → Nikhil
+```
+
+using attention.
+
+---
+
+# Classroom Analogy
+
+Imagine every word is a student.
+
+```text
+Nikhil
+studies
+AI
+because
+he
+loves
+technology
+```
+
+When processing:
+
+```text
+he
+```
+
+the model asks:
+
+```text
+Which words are important to me?
+```
+
+Example attention scores:
+
+```text
+Nikhil      80%
+studies      5%
+AI           3%
+because      2%
+loves        7%
+technology   3%
+```
+
+The word "he" focuses mostly on "Nikhil".
+
+---
+
+# Query, Key, and Value (QKV)
+
+Every token creates three vectors:
+
+```text
+Query (Q)
+Key   (K)
+Value (V)
+```
+
+Analogy:
+
+Query:
+"What am I looking for?"
+
+Key:
+"What information do I contain?"
+
+Value:
+"What information should I provide?"
+
+For:
+
+```text
+he
+```
+
+the Query asks:
+
+```text
+Who does "he" refer to?
+```
+
+The model compares this Query against all Keys and gathers information from the most relevant Values.
+
+---
+
+# Multi-Head Attention
+
+Transformers use multiple attention mechanisms simultaneously.
+
+Example:
+
+Head 1:
+Grammar
+
+Head 2:
+Subject-object relationships
+
+Head 3:
+Pronoun references
+
+Head 4:
+Long-distance relationships
+
+Each head learns different patterns.
+
+Their outputs are combined together.
+
+---
+
+# Feed Forward Network (FFN)
+
+After attention:
+
+```text
+Embeddings
+     ↓
+Attention
+     ↓
+Feed Forward Network
+     ↓
+Better Representation
+```
+
+Attention finds relevant information.
+
+FFN processes and transforms that information.
+
+---
+
+# Transformer Layer
+
+A Transformer layer contains:
+
+```text
+Input
+ ↓
+Multi-Head Attention
+ ↓
+Feed Forward Network
+ ↓
+Output
+```
+
+Modern LLMs stack many layers.
+
+Example:
+
+```text
+Layer 1
+ ↓
+Layer 2
+ ↓
+Layer 3
+ ↓
+...
+ ↓
+Layer 80
+```
+
+Each layer develops a deeper understanding of language.
+
+---
+
+# How Training Works
+
+Training is different from inference.
+
+Training Flow:
+
+```text
+Text
+ ↓
+Tokenizer
+ ↓
+Tokens
+ ↓
+Embeddings
+ ↓
+Transformer
+ ↓
+Prediction
+ ↓
+Loss Calculation
+ ↓
+Backpropagation
+ ↓
+Weight Update
+ ↓
+Repeat Billions of Times
+```
+
+---
+
+# Example Training Step
+
+Training sentence:
+
+```text
+I love playing cricket
+```
+
+Input:
+
+```text
+I love playing _____
+```
+
+Model Prediction:
+
+```text
+football
+```
+
+Correct Answer:
+
+```text
+cricket
+```
+
+This creates error.
+
+The model calculates loss and updates its parameters.
+
+Over billions of examples, the model gradually improves.
+
+---
+
+# Parameters
+
+Parameters are the learned numbers inside the model.
+
+Examples:
+
+* 7 Billion Parameters
+* 70 Billion Parameters
+* 400+ Billion Parameters
+
+More parameters generally allow the model to learn more complex patterns.
+
+---
+
+# Inference (Using a Trained Model)
+
+Once training is complete:
+
+```text
+Prompt
+ ↓
+Tokenizer
+ ↓
+Embeddings
+ ↓
+Transformer
+ ↓
+Prediction
+ ↓
+Generated Response
+```
+
+No learning happens during inference.
+
+The model only uses what it already learned during training.
+
+---
+
+# My Key Learnings
+
+1. LLMs are fundamentally next-token prediction systems.
+2. Tokenization is necessary because computers cannot directly process language.
+3. Embeddings convert tokens into meaningful numerical vectors.
+4. Positional Encoding helps Transformers understand word order.
+5. Self-Attention allows words to focus on relevant words.
+6. Query-Key-Value vectors drive the attention mechanism.
+7. Multi-Head Attention captures multiple relationships simultaneously.
+8. Feed Forward Networks process contextual information.
+9. Training involves prediction, loss calculation, and parameter updates.
+10. Inference uses learned parameters to generate responses.
+
+---
+
+# Final Understanding
+
+The biggest takeaway from today's learning is that an LLM is not simply a giant database of answers.
+
+Instead, it is a highly sophisticated prediction engine that:
+
+* Converts text into tokens
+* Converts tokens into embeddings
+* Understands relationships using attention
+* Learns patterns through training
+* Predicts the most likely next token
+
+This simple idea, scaled to billions of parameters and trillions of words, is what powers modern AI systems like ChatGPT.
