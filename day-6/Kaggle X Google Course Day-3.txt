@@ -1,0 +1,673 @@
+# Day 6: Agent Skills, Context Engineering & Evaluation-Driven Development
+
+## Day-3: AI intensive vibe coding Kaggle X Google 
+
+## Learning Source
+
+**Primary Resource:** Agent Skills Whitepaper Companion Podcast
+
+**Podcast:** Agent Skills Whitepaper Companion
+**Link:** https://www.youtube.com/watch?v=uYURYHhpmKc
+
+**Program Context:** Kaggle × Google AI Intensive – Vibe Coding Program
+
+---
+
+# Introduction
+
+Today I explored one of the most important concepts in modern AI engineering: **Agent Skills**.
+
+The podcast challenges the popular belief that building better AI systems requires creating increasingly complex multi-agent swarms. Instead, it introduces a lightweight and scalable architecture where a single powerful model dynamically loads specialized capabilities called **Skills**.
+
+The central idea is that AI performance often degrades not because models lack intelligence, but because they are overloaded with unnecessary context.
+
+This led me to learn about:
+
+* Context Engineering
+* Progressive Disclosure
+* Agent Skills Architecture
+* Evaluation-Driven Development (EDD)
+* Trajectory-Based Evaluation
+* Governance Frameworks
+* Enterprise Agent Deployment
+
+---
+
+# The Problem: Context Drought
+
+Most developers assume larger context windows automatically improve performance.
+
+However, the podcast introduces a phenomenon called:
+
+## Context Drought
+
+As more instructions, tools, documents, and examples are continuously added into the prompt:
+
+* Model attention becomes diluted
+* Relevant information becomes harder to locate
+* Accuracy decreases
+* Tool selection worsens
+* Reasoning quality drops
+
+Even though the model technically still has room in its context window, performance starts degrading long before the limit is reached.
+
+This creates hidden failures in production AI systems.
+
+---
+
+# Traditional Approach vs Agent Skills
+
+## Traditional Multi-Agent Architecture
+
+```text
+User Request
+      │
+      ▼
+Router Agent
+      │
+ ┌────┼────┐
+ ▼    ▼    ▼
+Agent A Agent B Agent C
+```
+
+Problems:
+
+* Complex orchestration
+* Higher latency
+* More maintenance
+* Difficult debugging
+* Increased infrastructure cost
+
+---
+
+## Agent Skills Architecture
+
+```text
+User Request
+      │
+      ▼
+ General AI Agent
+      │
+      ▼
+Loads Required Skill Dynamically
+      │
+      ▼
+Executes Specialized Task
+```
+
+Instead of creating many agents, we create many skills.
+
+A single agent becomes a specialist whenever needed.
+
+---
+
+# Anatomy of an Agent Skill
+
+An Agent Skill is simply a folder.
+
+```text
+Skill/
+│
+├── skill.md
+├── scripts/
+├── references/
+└── assets/
+```
+
+---
+
+## 1. skill.md (Mandatory)
+
+This is the brain of the skill.
+
+Contains:
+
+* Skill name
+* Trigger conditions
+* Metadata
+* Instructions
+* Usage examples
+
+Example:
+
+```yaml
+name: refund_processor
+
+trigger:
+  - refund request
+  - customer return
+
+instructions:
+  Follow refund workflow.
+```
+
+---
+
+## 2. Scripts Folder
+
+Contains executable code.
+
+Examples:
+
+* Python
+* JavaScript
+* Shell Scripts
+
+Purpose:
+
+Move deterministic tasks away from the LLM.
+
+Example:
+
+```python
+validate_invoice()
+calculate_refund()
+```
+
+This improves reliability dramatically.
+
+---
+
+## 3. References Folder
+
+Contains:
+
+* PDFs
+* Documentation
+* SOPs
+* Knowledge Base Articles
+
+These files are only loaded when the skill activates.
+
+---
+
+## 4. Assets Folder
+
+Stores supporting resources such as:
+
+* Templates
+* Images
+* Configurations
+* Sample outputs
+
+---
+
+# Progressive Disclosure
+
+The most important concept in the podcast.
+
+Instead of loading everything:
+
+```text
+ALL Skills
+ALL Instructions
+ALL Documents
+ALL Examples
+```
+
+Only metadata is initially loaded.
+
+Example:
+
+```text
+Available Skills:
+- Refund Processing
+- Inventory Lookup
+- Order Tracking
+```
+
+When the user asks:
+
+> "Where is my order?"
+
+Only the Order Tracking skill gets loaded.
+
+---
+
+## Benefits
+
+### Before
+
+```text
+4000 tokens
++
+2000 tokens
++
+3000 tokens
++
+5000 tokens
+```
+
+Huge context burden.
+
+---
+
+### After
+
+```text
+4000 tokens metadata
++
+2000 token active skill
+```
+
+Massive reduction.
+
+The podcast reports:
+
+## Up to 98% Context Reduction
+
+This prevents attention dilution and significantly improves performance.
+
+---
+
+# Evaluation-Driven Development (EDD)
+
+The whitepaper strongly argues that agent development without evaluation is chaos.
+
+Instead of:
+
+```text
+Build
+Deploy
+Hope
+```
+
+Use:
+
+```text
+Define Tests
+Build Skill
+Evaluate
+Deploy
+```
+
+---
+
+# Evaluation Before Development
+
+Before writing any skill:
+
+Create evaluation cases.
+
+Example:
+
+```json
+{
+  "input": "Refund order #123",
+  "expected_tools": [
+    "lookup_order",
+    "issue_refund"
+  ],
+  "expected_output":
+    "Refund initiated"
+}
+```
+
+The skill is then tested against these expectations.
+
+---
+
+# Trajectory Scoring
+
+A fascinating concept.
+
+Most evaluations check:
+
+```text
+Correct Answer?
+Yes/No
+```
+
+EDD checks:
+
+```text
+How did the agent arrive there?
+```
+
+This is called trajectory scoring.
+
+---
+
+Example:
+
+Correct path:
+
+```text
+Lookup User
+Validate Purchase
+Issue Refund
+```
+
+Bad path:
+
+```text
+Delete User
+Issue Refund
+```
+
+Both may end with:
+
+"Refund Complete"
+
+Traditional evaluation passes.
+
+Trajectory evaluation fails.
+
+This ensures safe automation.
+
+---
+
+# Pass-to-K Reliability Testing
+
+One of the most practical ideas from the podcast.
+
+Suppose a skill succeeds:
+
+```text
+60% of the time
+```
+
+Looks acceptable.
+
+But production systems need consistency.
+
+---
+
+If it must pass:
+
+```text
+8 consecutive times
+```
+
+Probability:
+
+```text
+0.6^8
+=
+1.68%
+```
+
+Meaning:
+
+The skill is unreliable.
+
+This technique exposes fragile skills before deployment.
+
+---
+
+# Governance: The Graduation Ladder
+
+Skills move through controlled stages.
+
+---
+
+## Stage 1: Read-Only
+
+Capabilities:
+
+* Observe
+* Analyze
+* Suggest
+
+Cannot modify systems.
+
+Evaluation is safe.
+
+---
+
+## Stage 2: Draft
+
+Capabilities:
+
+* Generate actions
+* Generate reports
+* Prepare responses
+
+Human approval required.
+
+```text
+AI Generates
+↓
+Human Reviews
+↓
+Approve
+```
+
+---
+
+## Stage 3: Action Allowed
+
+Capabilities:
+
+* Fully automated execution
+* Tool usage
+* Production deployment
+
+Only after strict reliability thresholds are met.
+
+---
+
+# Enterprise Case Study
+
+A large home improvement retailer uses Agent Skills to distribute knowledge ownership.
+
+Instead of AI engineers managing everything:
+
+Experts own their own skills.
+
+---
+
+## Customer Request
+
+```text
+I want to tile my shower.
+```
+
+Triggers:
+
+### Skill 1
+
+Project Guidance
+
+Owned by:
+
+* Construction experts
+* Trades specialists
+
+Provides:
+
+* Waterproofing advice
+* Installation guidance
+
+---
+
+### Skill 2
+
+Materials Calculator
+
+Owned by:
+
+* Merchandising team
+
+Calculates:
+
+* Tile quantity
+* Adhesive quantity
+* Waste factor
+
+---
+
+### Skill 3
+
+Delivery Planner
+
+Owned by:
+
+* Fulfillment team
+
+Uses deterministic code to:
+
+* Check inventory
+* Estimate delivery dates
+* Generate logistics plans
+
+---
+
+# Key Engineering Principles
+
+## Shift Intelligence Left
+
+Instead of relying on prompts:
+
+```text
+"Please validate this correctly."
+```
+
+Use deterministic code.
+
+```python
+if amount < 0:
+    reject()
+```
+
+Code is more reliable than instructions.
+
+---
+
+## Reduce Prompt Dependency
+
+Bad:
+
+```text
+Hope the model follows rules.
+```
+
+Good:
+
+```text
+Enforce rules through software.
+```
+
+This dramatically improves robustness.
+
+---
+
+## Supply Chain Security
+
+Treat skills like software dependencies.
+
+Best Practices:
+
+* Prefer first-party skills
+* Pin versions
+* Audit code
+* Verify updates
+* Review permissions
+
+Exactly like software package management.
+
+---
+
+# Major Takeaways
+
+### 1. Bigger Context ≠ Better Performance
+
+More information often reduces performance due to attention dilution.
+
+---
+
+### 2. Skills Beat Agent Swarms
+
+A single agent with specialized skills is simpler, cheaper, and easier to maintain.
+
+---
+
+### 3. Progressive Disclosure Is Essential
+
+Load information only when required.
+
+This keeps context focused.
+
+---
+
+### 4. Evaluation Must Come First
+
+Tests should be written before implementation.
+
+---
+
+### 5. Measure Trajectories, Not Just Outputs
+
+Correct answers obtained through unsafe processes are still failures.
+
+---
+
+### 6. Reliability Matters More Than Demos
+
+Pass-to-K testing reveals whether a skill can survive production environments.
+
+---
+
+### 7. Domain Experts Should Own Knowledge
+
+Business specialists can maintain skills without becoming AI engineers.
+
+---
+
+# Connection to My AI Learning Journey
+
+As part of the Kaggle × Google AI Intensive Program, today's learning helped me understand how modern AI systems move beyond simple prompting into structured, production-grade architectures.
+
+Previously I learned about:
+
+* LLM Fundamentals
+* Embeddings
+* Transformers
+* Retrieval-Augmented Generation (RAG)
+* Agentic Workflows
+
+Today connected all those concepts into a practical framework for building reliable AI agents at scale.
+
+The biggest lesson was that successful AI systems are not built by adding more prompts, but by designing better context management, evaluation pipelines, and specialized skills.
+
+---
+
+# Resources
+
+### Agent Skills Whitepaper Companion Podcast
+
+https://www.youtube.com/watch?v=uYURYHhpmKc
+
+### Google Agents Documentation
+
+https://google.github.io/adk-docs/
+
+### Google Agent Development Kit (ADK)
+
+https://github.com/google/adk-python
+
+### Model Context Protocol (MCP)
+
+https://modelcontextprotocol.io
+
+### Kaggle × Google AI Intensive
+
+https://www.kaggle.com/learn-guide/5-day-genai
+
+### Recommended Topics for Further Study
+
+* Context Engineering
+* Agent Skills
+* Multi-Agent Systems
+* Evaluation Driven Development (EDD)
+* MCP Protocol
+* RAG Architectures
+* Agent Security
+* Tool Calling Frameworks
+* Production AI Systems
+
+---
+
+## Day 6 Summary
+
+Today I learned that the future of AI engineering is not about building larger prompts or more agents. It is about building modular, evaluatable, secure, and dynamically loaded capabilities called Agent Skills. Progressive Disclosure, Evaluation-Driven Development, and Governance Frameworks provide the foundation for creating production-ready AI systems that are reliable, maintainable, and scalable.
